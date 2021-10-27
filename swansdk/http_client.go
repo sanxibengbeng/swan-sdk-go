@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+var debugFlag bool
+
 const (
 	methodGET         = "GET"
 	methodPOST        = "POST"
@@ -24,7 +26,6 @@ const (
 type config struct {
 	timeout time.Duration
 	retry   int
-	debug   bool
 }
 
 // httpClient Http类型的Ral封装体
@@ -46,6 +47,7 @@ type httpClient struct {
 type option interface {
 	apply(*config)
 }
+
 type funcOption struct {
 	f func(cfg *config)
 }
@@ -70,11 +72,6 @@ func optTimeout(timeout time.Duration) option {
 		cfg.timeout = timeout
 	})
 }
-func optDebug(debug bool) option {
-	return newFuncOption(func(cfg *config) {
-		cfg.debug = debug
-	})
-}
 
 // newHTTPClient 创建一个HTTPClient
 // opts 支持optTimeout 或 optRetry
@@ -87,8 +84,6 @@ func newHTTPClient(opts ...option) *httpClient {
 		opt.apply(cfg)
 	}
 	return &httpClient{
-		method:     methodPOST,
-		scheme:     "https",
 		getParams:  url.Values{},
 		postParams: url.Values{},
 		headers:    map[string]string{},
@@ -150,7 +145,7 @@ func (hc *httpClient) addHeader(k, v string) *httpClient {
 }
 
 func (hc *httpClient) prepareRequest() error {
-	reqURI := fmt.Sprintf("%s://%s/%s", hc.scheme, hc.host, hc.path)
+	reqURI := fmt.Sprintf("%s://%s%s", hc.scheme, hc.host, hc.path)
 	if len(hc.getParams) > 0 {
 		reqURI = fmt.Sprintf("%s?%s", reqURI, hc.getParams.Encode())
 	}
@@ -176,9 +171,9 @@ func (hc *httpClient) prepareRequest() error {
 		hc.debug("postreq err %s", err)
 		return err
 	}
-	hc.request.Header.Add("content-type", hc.contentType)
+	req.Header.Add("content-type", hc.contentType)
 	for k, v := range hc.headers {
-		hc.request.Header.Add(k, v)
+		req.Header.Add(k, v)
 	}
 	hc.debug("http-req %#v", req)
 	hc.request = req
@@ -186,7 +181,7 @@ func (hc *httpClient) prepareRequest() error {
 }
 
 func (hc *httpClient) debug(format string, v ...interface{}) {
-	if hc.config.debug {
+	if debugFlag {
 		log.Printf(format, v...)
 	}
 }
@@ -227,6 +222,10 @@ func (hc *httpClient) convert(resp interface{}) error {
 	case converterTypeJSON:
 		return json.Unmarshal(hc.rawResponse, resp)
 	default:
-		return fmt.Errorf("invalid converter %s", hc.converterType)
+		return fmt.Errorf("invalid converter[%s]", hc.converterType)
 	}
+}
+
+func Debug() {
+	debugFlag = true
 }
