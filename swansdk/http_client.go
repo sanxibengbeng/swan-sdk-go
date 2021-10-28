@@ -162,11 +162,11 @@ func (hc *httpClient) prepareRequest() error {
 	if len(hc.getParams) > 0 {
 		reqURI = fmt.Sprintf("%s?%s", reqURI, hc.getParams.Encode())
 	}
-	hc.debug("req_uri", reqURI)
+	hc.debugLog("req_uri", reqURI)
 	if hc.method == methodGET {
 		req, err := http.NewRequest(hc.method, reqURI, nil)
 		if err != nil {
-			hc.debug("getreq err %s", err)
+			hc.debugLog("getreq err %s", err)
 			return err
 		}
 		hc.request = req
@@ -181,19 +181,19 @@ func (hc *httpClient) prepareRequest() error {
 	}
 	req, err := http.NewRequest(hc.method, reqURI, bodyReader)
 	if err != nil {
-		hc.debug("postreq err %s", err)
+		hc.debugLog("postreq err %s", err)
 		return err
 	}
 	req.Header.Add("content-type", hc.contentType)
 	for k, v := range hc.headers {
 		req.Header.Add(k, v)
 	}
-	hc.debug("http-req %#v", req)
+	hc.debugLog("http-req %#v", req)
 	hc.request = req
 	return nil
 }
 
-func (hc *httpClient) debug(format string, v ...interface{}) {
+func (hc *httpClient) debugLog(format string, v ...interface{}) {
 	if debugFlag {
 		log.Printf(format, v...)
 	}
@@ -206,7 +206,7 @@ func (hc *httpClient) do() error {
 	client := &http.Client{Timeout: hc.config.timeout}
 	//todo retry && hook
 	res, err := client.Do(hc.request)
-	hc.debug("http response: %#v", res)
+	hc.debugLog("http response: %#v", res)
 	if err != nil {
 		return err
 	}
@@ -223,7 +223,7 @@ func (hc *httpClient) do() error {
 		return err
 	}
 	hc.rawResponse = btsRes
-	hc.debug("raw res: %s", btsRes)
+	hc.debugLog("raw res: %s", btsRes)
 	return nil
 }
 
