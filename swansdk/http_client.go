@@ -29,7 +29,7 @@ type config struct {
 	retry   int
 }
 
-// httpClient Http类型的Ral封装体
+// httpClient 封装http请求
 type httpClient struct {
 	scheme        string
 	host          string
