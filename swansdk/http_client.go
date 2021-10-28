@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 )
@@ -71,6 +72,18 @@ func optTimeout(timeout time.Duration) option {
 	return newFuncOption(func(cfg *config) {
 		cfg.timeout = timeout
 	})
+}
+
+func init() {
+	debugEnv := os.Getenv("DEBUG")
+	debugL := strings.Split(debugEnv, ",")
+	//如果环境变量包含swansdk字符串，开启debug日志
+	for _, v := range debugL {
+		if v == "swansdk" {
+			debugFlag = true
+			break
+		}
+	}
 }
 
 // newHTTPClient 创建一个HTTPClient
@@ -224,8 +237,4 @@ func (hc *httpClient) convert(resp interface{}) error {
 	default:
 		return fmt.Errorf("invalid converter[%s]", hc.converterType)
 	}
-}
-
-func Debug() {
-	debugFlag = true
 }

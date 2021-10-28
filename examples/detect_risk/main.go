@@ -30,7 +30,6 @@ func main() {
 	//// ev 1 为点击按钮获取，请按照文档设置合理的数值
 	//ev := "1"
 	//xtoken := string(xtokenByte)
-	swansdk.Debug()
 	reqParams := &swansdk.DetectRiskParam{
 		AccessToken: accessToken,
 		Useragent:   "xxxx",
