@@ -1,4 +1,10 @@
-package swansdk
+package openapi
+
+import (
+	"net/http"
+
+	"github.com/sanxibengbeng/swan-sdk-go/utils"
+)
 
 type DetectRiskParam struct {
 	AccessToken string
@@ -30,29 +36,28 @@ func DectectRisk(params *DetectRiskParam) (*DetectRiskResp, error) {
 	var err error
 	respData := &DetectRiskResp{}
 
-	client := newHTTPClient().
-		setContentType(contentTypeForm).
-		setConverterType(converterTypeJSON).
-		setMethod(methodPOST).
-		setScheme("https").
-		setHost("openapi.baidu.com").
-		setPath("/rest/2.0/smartapp/detectrisk")
+	client := utils.NewHTTPClient().
+		SetContentType(utils.ContentTypeForm).
+		SetConverterType(utils.ConverterTypeJSON).
+		SetMethod(http.MethodPost).
+		SetScheme("https").
+		SetHost("openapi.baidu.com").
+		SetPath("/rest/2.0/smartapp/detectrisk")
+	client.AddGetParam("access_token", params.AccessToken)
 
-	client.addGetParam("access_token", params.AccessToken)
+	client.AddPostParam("appkey", params.Appkey)
+	client.AddPostParam("xtoken", params.Xtoken)
+	client.AddPostParam("type", params.Type)
+	client.AddPostParam("clientip", params.Clientip)
+	client.AddPostParam("ts", params.Ts)
+	client.AddPostParam("ev", params.Ev)
+	client.AddPostParam("useragent", params.Useragent)
+	client.AddPostParam("phone", params.Phone)
 
-	client.addPostParam("appkey", params.Appkey)
-	client.addPostParam("xtoken", params.Xtoken)
-	client.addPostParam("type", params.Type)
-	client.addPostParam("clientip", params.Clientip)
-	client.addPostParam("ts", params.Ts)
-	client.addPostParam("ev", params.Ev)
-	client.addPostParam("useragent", params.Useragent)
-	client.addPostParam("phone", params.Phone)
-
-	err = client.do()
+	err = client.Do()
 	if err != nil {
 		return nil, err
 	}
-	err = client.convert(respData)
+	err = client.Convert(respData)
 	return respData, err
 }

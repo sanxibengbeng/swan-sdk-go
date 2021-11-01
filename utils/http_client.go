@@ -1,4 +1,4 @@
-package swansdk
+package utils
 
 import (
 	"encoding/json"
@@ -16,18 +16,11 @@ import (
 var debugFlag bool
 
 const (
-	methodGET         = "GET"
-	methodPOST        = "POST"
-	contentTypeForm   = "application/x-www-form-urlencoded"
-	contentTypeJSON   = "application/json"
-	converterTypeJSON = "json"
+	ContentTypeForm   = "application/x-www-form-urlencoded"
+	ContentTypeJSON   = "application/json"
+	ConverterTypeJSON = "json"
 	defaultTimeout    = 3 * time.Second
 )
-
-type config struct {
-	timeout time.Duration
-	retry   int
-}
 
 // httpClient 封装http请求
 type httpClient struct {
@@ -45,34 +38,6 @@ type httpClient struct {
 	rawResponse   []byte
 	request       *http.Request
 }
-type option interface {
-	apply(*config)
-}
-
-type funcOption struct {
-	f func(cfg *config)
-}
-
-func (fdo *funcOption) apply(cfg *config) {
-	fdo.f(cfg)
-}
-
-func newFuncOption(f func(*config)) *funcOption {
-	return &funcOption{
-		f: f,
-	}
-}
-
-func optRetry(retry int) option {
-	return newFuncOption(func(cfg *config) {
-		cfg.retry = retry
-	})
-}
-func optTimeout(timeout time.Duration) option {
-	return newFuncOption(func(cfg *config) {
-		cfg.timeout = timeout
-	})
-}
 
 func init() {
 	debugEnv := os.Getenv("DEBUG")
@@ -88,7 +53,7 @@ func init() {
 
 // newHTTPClient 创建一个HTTPClient
 // opts 支持optTimeout 或 optRetry
-func newHTTPClient(opts ...option) *httpClient {
+func NewHTTPClient(opts ...Option) *httpClient {
 	cfg := &config{
 		retry:   0,
 		timeout: defaultTimeout,
@@ -104,35 +69,35 @@ func newHTTPClient(opts ...option) *httpClient {
 	}
 }
 
-func (hc *httpClient) setContentType(contentType string) *httpClient {
+func (hc *httpClient) SetContentType(contentType string) *httpClient {
 	hc.contentType = contentType
 	return hc
 }
-func (hc *httpClient) setPath(path string) *httpClient {
+func (hc *httpClient) SetPath(path string) *httpClient {
 	hc.path = path
 	return hc
 }
-func (hc *httpClient) setHost(host string) *httpClient {
+func (hc *httpClient) SetHost(host string) *httpClient {
 	hc.host = host
 	return hc
 }
 
-func (hc *httpClient) setScheme(scheme string) *httpClient {
+func (hc *httpClient) SetScheme(scheme string) *httpClient {
 	hc.scheme = scheme
 	return hc
 }
 
-func (hc *httpClient) setMethod(method string) *httpClient {
+func (hc *httpClient) SetMethod(method string) *httpClient {
 	hc.method = method
 	return hc
 }
 
-func (hc *httpClient) setConverterType(converterType string) *httpClient {
+func (hc *httpClient) SetConverterType(converterType string) *httpClient {
 	hc.converterType = converterType
 	return hc
 }
 
-func (hc *httpClient) setBody(input interface{}) *httpClient {
+func (hc *httpClient) SetBody(input interface{}) *httpClient {
 	switch input.(type) {
 	case []byte:
 		hc.requestBody = input.([]byte)
@@ -142,17 +107,17 @@ func (hc *httpClient) setBody(input interface{}) *httpClient {
 	}
 	return hc
 }
-func (hc *httpClient) addPostParam(k, v string) *httpClient {
+func (hc *httpClient) AddPostParam(k, v string) *httpClient {
 	hc.postParams.Add(k, v)
 	return hc
 }
 
-func (hc *httpClient) addGetParam(k, v string) *httpClient {
+func (hc *httpClient) AddGetParam(k, v string) *httpClient {
 	hc.getParams.Add(k, v)
 	return hc
 }
 
-func (hc *httpClient) addHeader(k, v string) *httpClient {
+func (hc *httpClient) AddHeader(k, v string) *httpClient {
 	hc.headers[k] = v
 	return hc
 }
@@ -163,7 +128,7 @@ func (hc *httpClient) prepareRequest() error {
 		reqURI = fmt.Sprintf("%s?%s", reqURI, hc.getParams.Encode())
 	}
 	hc.debugLog("req_uri", reqURI)
-	if hc.method == methodGET {
+	if hc.method == http.MethodGet {
 		req, err := http.NewRequest(hc.method, reqURI, nil)
 		if err != nil {
 			hc.debugLog("getreq err %s", err)
@@ -174,7 +139,7 @@ func (hc *httpClient) prepareRequest() error {
 	}
 	var bodyReader io.Reader
 	switch hc.contentType {
-	case contentTypeForm:
+	case ContentTypeForm:
 		bodyReader = strings.NewReader(hc.postParams.Encode())
 	default:
 		bodyReader = strings.NewReader(string(hc.requestBody))
@@ -199,7 +164,7 @@ func (hc *httpClient) debugLog(format string, v ...interface{}) {
 	}
 }
 
-func (hc *httpClient) do() error {
+func (hc *httpClient) Do() error {
 	if err := hc.prepareRequest(); err != nil {
 		return err
 	}
@@ -227,12 +192,12 @@ func (hc *httpClient) do() error {
 	return nil
 }
 
-func (hc *httpClient) getRawResponse() []byte {
+func (hc *httpClient) GetRawResponse() []byte {
 	return hc.rawResponse
 }
-func (hc *httpClient) convert(resp interface{}) error {
+func (hc *httpClient) Convert(resp interface{}) error {
 	switch hc.converterType {
-	case converterTypeJSON:
+	case ConverterTypeJSON:
 		return json.Unmarshal(hc.rawResponse, resp)
 	default:
 		return fmt.Errorf("invalid converter[%s]", hc.converterType)
